@@ -2,21 +2,32 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from crewai import Task, Crew, Agent
 import os
-from DiagnosticInfoAgent import DiagnosticInfoAgent
-from DoctorInfoAgent import DoctorInfoAgent
-from EmergencyServicesAgent import EmergencyServicesAgent
-from HospitalComparisonAgent import HospitalComparisonAgent
-from constants import MODEL_NAME, OPENAI_API_KEY
+from src.DiagnosticInfoAgent import DiagnosticInfoAgent
+from src.DoctorInfoAgent import DoctorInfoAgent
+from src.EmergencyServicesAgent import EmergencyServicesAgent
+from src.HospitalComparisonAgent import HospitalComparisonAgent
+from src.constants import MODEL_NAME, OPENAI_API_KEY
 from textwrap import dedent
 
-# FastAPI app initialization
+from fastapi.middleware.cors import CORSMiddleware
+
+# ✅ **Initialize FastAPI app first**
 app = FastAPI(title="Health-Sense AI")
 
-# Setting OpenAI API key and model name as environment variables
+# ✅ **Add CORS middleware after app initialization**
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Change to specific frontend URL in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# ✅ **Set environment variables**
 os.environ["OPENAI_API_KEY"] = OPENAI_API_KEY
 os.environ["OPENAI_MODEL_NAME"] = MODEL_NAME
 
-# Initialize agents
+# ✅ **Initialize agents**
 hospital_comparison_agent = HospitalComparisonAgent()
 doctor_info_agent = DoctorInfoAgent()
 emergency_services_agent = EmergencyServicesAgent()
@@ -27,7 +38,7 @@ doctor_slots_agent = doctor_info_agent.doctor_slots_agent
 emergency_agent = emergency_services_agent.emergency_agent
 diagnostic_info_agent = diagnostic_info_agent.diagnostic_info_agent
 
-# Define a router agent
+# ✅ **Define a router agent**
 router_agent = Agent(
     role='Researcher',
     goal='Research and analyze information',
@@ -35,12 +46,11 @@ router_agent = Agent(
     allow_delegation=True
 )
 
-
-# Define the input model for queries
+# ✅ **Define the input model for queries**
 class QueryInput(BaseModel):
     query: str
 
-
+# ✅ **API Endpoint: Handle Query**
 @app.post("/query")
 async def handle_query(input: QueryInput):
     query = input.query
@@ -72,12 +82,12 @@ async def handle_query(input: QueryInput):
     responses = [task.raw for task in result_with_router.tasks_output]
     return {"query": query, "responses": responses}
 
-# Health check endpoint
+# ✅ **API Endpoint: Health Check**
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
 
-
+# ✅ **Run FastAPI app**
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
