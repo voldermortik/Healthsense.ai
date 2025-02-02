@@ -153,25 +153,42 @@
             </div>
         </div>
     </div>
+
     <script>
+        const API_URL = "/query";  // Use relative path to work on Hugging Face Spaces
         async function sendMessage() {
             const userInput = document.getElementById('user-input');
             const chatBox = document.getElementById('chat-box');
             if (userInput.value.trim() !== "") {
+                // User message
                 const userMessage = document.createElement('div');
                 userMessage.classList.add('message', 'user-message');
                 userMessage.textContent = userInput.value;
                 chatBox.appendChild(userMessage);
+                // Bot processing message
                 const botMessage = document.createElement('div');
                 botMessage.classList.add('message', 'bot-message');
                 botMessage.textContent = "Processing...";
                 chatBox.appendChild(botMessage);
                 try {
-                    const response = await fetch(`http://127.0.0.1:8000/query?question=${encodeURIComponent(userInput.value)}`);
+                    const response = await fetch(API_URL, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ query: userInput.value }),
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
                     const result = await response.json();
-                    botMessage.textContent = result.answer;
+                    
+                    if (result.responses && result.responses.length > 0) {
+                        botMessage.textContent = result.responses.join("\n");
+                    } else {
+                        botMessage.textContent = "No response from AI.";
+                    }
                 } catch (error) {
-                    botMessage.textContent = "Error fetching response.";
+                    botMessage.textContent = "Error fetching response. Please check the backend.";
+                    console.error("API Call Error:", error);
                 }
                 userInput.value = "";
                 chatBox.scrollTop = chatBox.scrollHeight;
