@@ -7,8 +7,9 @@ from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_community.utilities import SQLDatabase
 from langchain_openai import ChatOpenAI
 
-from constants import MODEL_NAME
-
+from src.constants import MODEL_NAME
+# Absolute path to SQLite database file
+DB_PATH = "/Users/voldemort/Downloads/Healthsense.ai-main/src/appointments.db"
 
 class DoctorInfoAgent:
     """
@@ -78,7 +79,7 @@ class SlotsQueryTool(BaseTool):
             Thought:{agent_scratchpad}'''
         doctor_info_agent = create_sql_agent(
             llm=llm,
-            toolkit=SQLDatabaseToolkit(db=SQLDatabase.from_uri("sqlite:///appointments.db"), llm=llm),
+            toolkit=SQLDatabaseToolkit(db=SQLDatabase.from_uri(f"sqlite:///{DB_PATH}"), llm=llm),
             prompt=PromptTemplate.from_template(template),
             verbose=True,
             handle_parsing_errors=True,
